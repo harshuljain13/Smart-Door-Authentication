@@ -48,14 +48,14 @@ def lambda_handler(event, context):
         fragmentNumber= json_data['InputInformation']['KinesisVideo']['FragmentNumber']
         fileName,faceId=store_image(kvs_stream_name,fragmentNumber, None)
         phone_number_owner = '3472004054'
-        link_visitor_image = 'https://visitorb01.s3.amazonaws.com/' + filename
+        link_visitor_image = 'https://visitorb01.s3.amazonaws.com/' + fileName
         
         ####saqib changes start
         link_visitor_details_form = 'https://visitorb01.s3.amazonaws.com/WebPage_Vistor_Info.html?filename='+fileName+"&faceid="+faceId
         ###saqib changes end
         
         print("URLs sent to Owner: ", link_visitor_details_form)
-        sendMessageToOwner(phone_number_owner, link)
+        sendMessageToOwner(phone_number_owner, link_visitor_details_form)
     else:
         print('found the match in collections')
         image_id = json_data['FaceSearchResponse'][0]['MatchedFaces'][0]['Face']['ImageId']
@@ -113,7 +113,7 @@ def sendMessageToOwner(phone_number, link):
 	
 def store_image(stream_name, fragmentNumber,faceId):
     s3_client = boto3.client('s3')
-    rekClient=boto3.client('rekognition')
+    
     
     kvs = boto3.client("kinesisvideo")
 
@@ -137,19 +137,19 @@ def store_image(stream_name, fragmentNumber,faceId):
     collectionId="smart_door_collection"
     print("KVS Stream: ",kvs_stream)
     
-    with open('/tmp/stream.mkv', 'wb') as f:
+    with open('/tmp/stream.mp4', 'wb') as f:
         streamBody = kvs_stream['Payload'].read(1024*16384) 
         f.write(streamBody)
     
     print('reading the temp video file')
-    cap = cv2.VideoCapture('/tmp/stream.mkv')
+    cap = cv2.VideoCapture('/tmp/stream.mp4')
         
-    total=int(count_frames_manual(cap)/2)
-    cap.set(2,total);
-    print(total)
-    print('cap: ', cap)
-    ret, frame = cap.read() 
-    print('frame: ',ret,frame)
+    #total=int(count_frames_manual(cap)/2)
+    #cap.set(2,total);
+    #print(total)
+    #print('cap: ', cap)
+    ret, frame = cap.read()
+    
     print('writing the frame in a temp file')
     cv2.imwrite('/tmp/frame.jpg', frame)
         
@@ -169,19 +169,21 @@ def store_image(stream_name, fragmentNumber,faceId):
 
     
 def index_image(frame, collectionId, fragmentNumber):
-     
+    rekClient=boto3.client('rekognition')
     retval, buffer = cv2.imencode('.jpg', frame)
+    
     response=rekClient.index_faces(CollectionId=collectionId,
-    Image={
-    'Bytes': buffer,
-    },
-    ExternalImageId=fragmentNumber,
-    DetectionAttributes=['ALL'])
+            Image={
+            'Bytes': buffer.tobytes(),
+            },
+            ExternalImageId=fragmentNumber,
+            DetectionAttributes=['ALL'])
     
     print('New Response',response)
     faceId=''
     for faceRecord in response['FaceRecords']:
         faceId = faceRecord['Face']['FaceId']
+    return faceId
 
 def count_frames_manual(video):
 	total = 0
