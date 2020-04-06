@@ -1,6 +1,8 @@
 import logging
 import base64
 import json
+import cv2
+
 import boto3
 import os
 import random as r
@@ -19,6 +21,9 @@ dynamo_passcodes_table = dynamo_resource.Table("passcodes")
 
 
 def lambda_handler(event, context):
+    print(cv2.VideoCapture)
+    print(cv2.__version__)
+
     logging.info("API CALLED. EVENT IS:{}".format(event))
     print("Data streaming")
     json_data = event['Records'][0]['kinesis']['data']
@@ -74,6 +79,7 @@ def lambda_handler(event, context):
             
             # send the otp to visitor
             
+            
             visitors_name = visitors_response['Item']['name']
             visitors_photo = visitors_response['Item']['photo']
             photo={'objectKey':'updatedKey' , 'bucket' : 'visitorb01', 'createdTimestamp' : str(time.ctime(time.time()))}
@@ -115,8 +121,11 @@ def store_image(stream_name, fragmentNumber,faceId):
         APIName="GET_MEDIA_FOR_FRAGMENT_LIST",
         StreamName=stream_name
     )['DataEndpoint']
+    
     print("Kinesis Data endpoint: ",endpoint)
+    
     kvam = boto3.client("kinesis-video-archived-media", endpoint_url=endpoint)
+    
     print(stream_name, fragmentNumber)
     
     kvs_stream = kvam.get_media_for_fragment_list(
@@ -131,27 +140,32 @@ def store_image(stream_name, fragmentNumber,faceId):
     with open('/tmp/stream.mkv', 'wb') as f:
         streamBody = kvs_stream['Payload'].read(1024*16384) 
         f.write(streamBody)
-        print('reading the temp video file')
-        cap = cv2.VideoCapture('/tmp/stream.mkv')
+    
+    print('reading the temp video file')
+    cap = cv2.VideoCapture('/tmp/stream.mkv')
         
-        total=int(count_frames_manual(cap)/2)
-        cap.set(2,total);
-        ret, frame = cap.read() 
-        print('writing the frame in a temp file')
-        cv2.imwrite('/tmp/frame.jpg', frame)
+    total=int(count_frames_manual(cap)/2)
+    cap.set(2,total);
+    print(total)
+    print('cap: ', cap)
+    ret, frame = cap.read() 
+    print('frame: ',ret,frame)
+    print('writing the frame in a temp file')
+    cv2.imwrite('/tmp/frame.jpg', frame)
         
-        if(faceId is None):
-            faceId=index_image(frame, collectionId,fragmentNumber)
-        fileName= faceId+'-'+fragmentNumber+'.jpg'
-        print('writing the file to s3')
-        s3_client.upload_file(
+    if(faceId is None):
+        faceId=index_image(frame, collectionId,fragmentNumber)
+            
+    fileName= faceId+'-'+fragmentNumber+'.jpg'
+    print('writing the file to s3')
+    s3_client.upload_file(
             '/tmp/frame.jpg',
             'visitorb01', 
             fileName
         )
-        cap.release()
-        print('Image uploaded')
-        return fileName, faceId
+    cap.release()
+    print('Image uploaded')
+    return fileName, faceId
 
     
 def index_image(frame, collectionId, fragmentNumber):
