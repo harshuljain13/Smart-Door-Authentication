@@ -51,7 +51,7 @@ def lambda_handler(event, context):
         link_visitor_image = 'https://visitorb01.s3.amazonaws.com/' + fileName
         
         ####saqib changes start
-        link_visitor_details_form = 'https://visitorb01.s3.amazonaws.com/WebPage_Vistor_Info.html?filename='+fileName+"&faceid="+faceId
+        link_visitor_details_form = 'https://visitorb01.s3.amazonaws.com/index.html?filename='+fileName+"&faceid="+faceId
         ###saqib changes end
         
         print("URLs sent to Owner: ", link_visitor_details_form)
@@ -75,20 +75,20 @@ def lambda_handler(event, context):
         if('Item' in keys_list):
             print('Item found in visitors table')
             phone_number_visitor = visitors_response['Item']['phone']
-            face_id_visitor = visitors_response['Item']['faceId']
+            face_id_visitor = visitors_response['Item']['faceid']
             
             # send the otp to visitor
-            
+            sendOtpToVisitor(phone_number_visitor, otp)
             
             visitors_name = visitors_response['Item']['name']
             visitors_photo = visitors_response['Item']['photo']
             photo={'objectKey':'updatedKey' , 'bucket' : 'visitorb01', 'createdTimestamp' : str(time.ctime(time.time()))}
             visitors_photo.append(photo)
             
-            my_visitor_entry = {'faceId' : face_id_visitor , 'name' : visitors_name , 'phone' : phone_number_visitor , 'photo' : visitors_photo}
+            my_visitor_entry = {'faceid' : face_id_visitor , 'name' : visitors_name , 'phone' : phone_number_visitor , 'photo' : visitors_photo}
             dynamo_visitors_table.put_item(Item=my_visitor_entry)
             
-            my_string = {'faceId' : face_id_visitor, 'otp': otp, 'expiration' : str(int(time.time() + 300))}
+            my_string = {'faceid' : face_id_visitor, 'otp': otp, 'expiration' : str(int(time.time() + 300))}
             dynamo_passcodes_table.put_item(Item=my_string)
         else:
             print('visitor details not present in db')
@@ -118,7 +118,7 @@ def store_image(stream_name, fragmentNumber,faceId):
     kvs = boto3.client("kinesisvideo")
 
     endpoint = kvs.get_data_endpoint(
-        APIName="GET_MEDIA_FOR_FRAGMENT_LIST",
+        APIName="GET_HLS_STREAMING_SESSION_URL",
         StreamName=stream_name
     )['DataEndpoint']
     
@@ -128,21 +128,26 @@ def store_image(stream_name, fragmentNumber,faceId):
     
     print(stream_name, fragmentNumber)
     
-    kvs_stream = kvam.get_media_for_fragment_list(
+    """kvs_stream = kvam.get_media_for_fragment_list(
         StreamName=stream_name,
         Fragments=[
             fragmentNumber,
-        ])
+        ])"""
+        
+    kvs_stream = kvam.get_hls_streaming_session_url(
+            StreamName=stream_name,
+            PlaybackMode="LIVE"
+        )['HLSStreamingSessionURL']
         
     collectionId="smart_door_collection"
     print("KVS Stream: ",kvs_stream)
     
-    with open('/tmp/stream.mp4', 'wb') as f:
-        streamBody = kvs_stream['Payload'].read(1024*16384) 
-        f.write(streamBody)
+    """with open('/tmp/stream1.mp4', 'wb') as f:
+        streamBody = kvs_stream['Payload'].read() 
+        f.write(streamBody)"""
     
     print('reading the temp video file')
-    cap = cv2.VideoCapture('/tmp/stream.mp4')
+    cap = cv2.VideoCapture(kvs_stream)
         
     #total=int(count_frames_manual(cap)/2)
     #cap.set(2,total);
@@ -151,7 +156,7 @@ def store_image(stream_name, fragmentNumber,faceId):
     ret, frame = cap.read()
     
     print('writing the frame in a temp file')
-    cv2.imwrite('/tmp/frame.jpg', frame)
+    cv2.imwrite('/tmp/frame1.jpg', frame)
         
     if(faceId is None):
         faceId=index_image(frame, collectionId,fragmentNumber)
@@ -159,7 +164,7 @@ def store_image(stream_name, fragmentNumber,faceId):
     fileName= faceId+'-'+fragmentNumber+'.jpg'
     print('writing the file to s3')
     s3_client.upload_file(
-            '/tmp/frame.jpg',
+            '/tmp/frame1.jpg',
             'visitorb01', 
             fileName
         )
