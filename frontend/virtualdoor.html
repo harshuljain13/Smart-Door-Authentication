@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Visitor Information WebPage 1</title>
+    <script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript"></script>
+    <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="lib/axios/dist/axios.standalone.js" type="text/javascript"></script>
+    <script src="lib/CryptoJS/rollups/hmac-sha256.js" type="text/javascript"></script>
+    <script src="lib/CryptoJS/rollups/sha256.js" type="text/javascript"></script>
+    <script src="lib/CryptoJS/components/hmac.js" type="text/javascript"></script>
+    <script src="lib/CryptoJS/components/enc-base64.js" type="text/javascript"></script>
+    <script src="lib/url-template/url-template.js" type="text/javascript"></script>
+    <script src="lib/apiGatewayCore/sigV4Client.js" type="text/javascript"></script>
+    <script src="lib/apiGatewayCore/apiGatewayClient.js" type="text/javascript"></script>
+    <script src="lib/apiGatewayCore/simpleHttpClient.js" type="text/javascript"></script>
+    <script src="lib/apiGatewayCore/utils.js" type="text/javascript"></script>
+    <script src="apigClient.js" type="text/javascript"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.283.1.min.js"></script>
+    <script>
+        function my_submit() {
+            var apigClient = apigClientFactory.newClient();
+            var params = {
+                //This is where any header, path, or querystring request params go. The key is the parameter named as defined in the API
+            };
+
+            var body = {
+                //This is where you define the body of the request
+                'message': {'otp': document.getElementById("OTP").value}
+            }
+            var additionalParams = {}
+
+            apigClient.virtualdoorPost(params, body, additionalParams)
+                .then(function (result) {
+                    alert(result.data);
+                    console.log(result);
+                }).catch(function (result) {
+                //This is where you would put an error callback
+                console.log(result);
+            });
+        };
+
+    </script>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+<h2 align="center">OTP Validation Page</h2>
+One Time Password (OTP):<br>
+<input id="OTP" type="text">
+<br><br>
+<button id="user-input-button" onclick="my_submit()"> SUBMIT</button>
+<p>if you have entered the correct OTP you will be given access to the Door</p>
+</body>
+
+</html>
