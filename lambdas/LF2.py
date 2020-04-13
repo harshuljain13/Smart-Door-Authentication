@@ -44,7 +44,7 @@ def lambda_handler(event, context):
     my_visitor_entry = {'faceid' : visitors_faceId , 'name' : visitors_name , 'phone' : visitors_phone , 'photo' : visitors_photo}
     dynamo_visitors_table.put_item(Item=my_visitor_entry)
     
-    my_passcodes_entry = {'faceid' : visitors_faceId, 'otp': otp, 'expiration' : str(int(time.time() + 300))}
+    my_passcodes_entry = {'faceid' : visitors_faceId, 'otp': otp, 'expiration' : int(time.time() + 300)}
     dynamo_passcodes_table.put_item(Item=my_passcodes_entry)
     
     sendOtpToVisitor(visitors_phone, otp)

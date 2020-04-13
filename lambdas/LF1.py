@@ -65,31 +65,36 @@ def lambda_handler(event, context):
     
         key = {'faceid' : faceId}   
         visitors_response = dynamo_visitors_table.get_item(Key=key)
+        passcodes_response = dynamo_passcodes_table.get_item(Key=key)
         
         keys_list = list(visitors_response.keys())
+        keys_list2 = list(passcodes_response.keys())
         
         otp=""
         for i in range(4):
             otp+=str(r.randint(1,9))
         
         if('Item' in keys_list):
-            print('Item found in visitors table')
-            phone_number_visitor = visitors_response['Item']['phone']
-            face_id_visitor = visitors_response['Item']['faceid']
-            
-            # send the otp to visitor
-            sendOtpToVisitor(phone_number_visitor, otp)
-            
-            visitors_name = visitors_response['Item']['name']
-            visitors_photo = visitors_response['Item']['photo']
-            photo={'objectKey':'updatedKey' , 'bucket' : 'visitorb01', 'createdTimestamp' : str(time.ctime(time.time()))}
-            visitors_photo.append(photo)
-            
-            my_visitor_entry = {'faceid' : face_id_visitor , 'name' : visitors_name , 'phone' : phone_number_visitor , 'photo' : visitors_photo}
-            dynamo_visitors_table.put_item(Item=my_visitor_entry)
-            
-            my_string = {'faceid' : face_id_visitor, 'otp': otp, 'expiration' : str(int(time.time() + 300))}
-            dynamo_passcodes_table.put_item(Item=my_string)
+            if 'Item' not in keys_list2:
+                print('Item found in visitors table and no otp present')
+                phone_number_visitor = visitors_response['Item']['phone']
+                face_id_visitor = visitors_response['Item']['faceid']
+                
+                # send the otp to visitor
+                sendOtpToVisitor(phone_number_visitor, otp)
+                
+                visitors_name = visitors_response['Item']['name']
+                visitors_photo = visitors_response['Item']['photo']
+                photo={'objectKey':'updatedKey' , 'bucket' : 'visitorb01', 'createdTimestamp' : str(time.ctime(time.time()))}
+                visitors_photo.append(photo)
+                
+                my_visitor_entry = {'faceid' : face_id_visitor , 'name' : visitors_name , 'phone' : phone_number_visitor , 'photo' : visitors_photo}
+                dynamo_visitors_table.put_item(Item=my_visitor_entry)
+                
+                my_string = {'faceid' : face_id_visitor, 'otp': otp, 'expiration' : int(time.time() + 300)}
+                dynamo_passcodes_table.put_item(Item=my_string)
+            else:
+                print('OTP is already generated for the ')
         else:
             print('visitor details not present in db')
         
