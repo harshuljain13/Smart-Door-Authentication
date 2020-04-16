@@ -2,6 +2,68 @@
 <html>
 
 <head>
+    <style> 
+    body {
+        font-family: Arial;
+    }
+        .otp{
+            margin-left: 35%;
+            margin-top: 1%;
+            
+        }
+
+        #user-input-button {
+            border-radius: 6px;
+            width: 85px;
+            height: 30px;
+            padding: 3px;
+            border: 1px solid rgb(65, 157, 187);
+            background-color: lightblue;
+            margin-left: 35%;
+        }
+
+        #warn-otp {
+            margin-top: 5%;
+        }
+
+        #OTP{
+            width: 400px;
+            height: 40px;
+            border-radius: 6px;
+            border: 1px solid lightgrey;
+            margin-top: 1%;
+            padding: 7px;
+        }
+
+        #main{
+            background-color: lightgrey;
+            margin-right: 28%;
+            padding: 5%;
+            border-radius: 10px;
+            height: 315px;
+            width:500px;
+        }
+
+        .headings{
+            margin-bottom: 4%;
+        }
+
+        #final-image{
+            margin:auto;
+            margin-left: 38%;
+            margin-top: -15%;
+            visibility: hidden;
+
+        }
+
+        #p1 {
+            margin-left: 38%;
+            font-size: 24px;
+            font-weight: 500;
+
+        }
+        
+        </style>
     <title>Visitor Information WebPage 1</title>
     <script src="https://code.jquery.com/jquery-2.1.4.js" type="text/javascript"></script>
     <meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
@@ -19,12 +81,23 @@
     <script src="apigClient.js" type="text/javascript"></script>
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.283.1.min.js"></script>
     <script>
+        function successful(name){
+            document.getElementById("main").style.visibility = "hidden";
+            console.log(name)
+            document.getElementById("final-image").style.visibility="visible";
+            alert(name)
+            document.getElementById("p1").innerHTML = "It's open! Please enter:"  + name;
+
+
+
+        }
         function my_submit() {
+
             var apigClient = apigClientFactory.newClient();
             var params = {
                 //This is where any header, path, or querystring request params go. The key is the parameter named as defined in the API
             };
-
+            
             var body = {
                 //This is where you define the body of the request
                 'message': {'otp': document.getElementById("OTP").value}
@@ -33,7 +106,7 @@
 
             apigClient.virtualdoorPost(params, body, additionalParams)
                 .then(function (result) {
-                    alert(result.data);
+                    successful(result.data)
                     console.log(result);
                 }).catch(function (result) {
                 //This is where you would put an error callback
@@ -46,12 +119,19 @@
 </head>
 
 <body>
-<h2 align="center">OTP Validation Page</h2>
-One Time Password (OTP):<br>
-<input id="OTP" type="text">
-<br><br>
-<button id="user-input-button" onclick="my_submit()"> SUBMIT</button>
-<p>if you have entered the correct OTP you will be given access to the Door</p>
+    <div class= "otp" id = "main"> 
+    <h2 class="headings" >OTP Validation Page</h2>
+        One Time Password (OTP):<br>
+        <input id="OTP" type="text" placeholder="Enter your OTP here.">
+        <br><br>
+        <button id="user-input-button" onclick="my_submit()"> Submit</button>
+        <p id="warn-otp">If you have entered the correct OTP, you will be given access to the door.</p>
+    </div>
+                    
+    <img id="final-image" src ="https://visitorb01.s3.amazonaws.com/opendoor.png"  height="400px" width="400px" visibility="hidden" class="otp">
+    <h1>  </h1>
+    <h1 id ="p1"> </h1>
+
 </body>
 
 </html>

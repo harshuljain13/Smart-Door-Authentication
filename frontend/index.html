@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <style> 
+    .buttons{
+        margin-left: 35%;
+        margin-top: 1%;
+    }
+    
+    </style>
+    <title>Visitor Information WebPage 1</title>
+
+    <script type="text/javascript" src="https://code.jquery.com/jquery-2.1.4.js"></script>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script type="text/javascript" src="lib/axios/dist/axios.standalone.js"></script>
+    <script type="text/javascript" src="lib/CryptoJS/rollups/hmac-sha256.js"></script>
+    <script type="text/javascript" src="lib/CryptoJS/rollups/sha256.js"></script>
+    <script type="text/javascript" src="lib/CryptoJS/components/hmac.js"></script>
+    <script type="text/javascript" src="lib/CryptoJS/components/enc-base64.js"></script>
+    <script type="text/javascript" src="lib/url-template/url-template.js"></script>
+    <script type="text/javascript" src="lib/apiGatewayCore/sigV4Client.js"></script>
+    <script type="text/javascript" src="lib/apiGatewayCore/apiGatewayClient.js"></script>
+    <script type="text/javascript" src="lib/apiGatewayCore/simpleHttpClient.js"></script>
+    <script type="text/javascript" src="lib/apiGatewayCore/utils.js"></script>
+    <script type="text/javascript" src="apigClient.js"></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.283.1.min.js"></script>
+    <!-- <script type="text/javascript" src="WebPage_Vistor_Info.js"></script> -->
+    <script type="text/javascript">
+
+window.onload = function() {
+        dynamicURL();
+    };
+
+        function dynamicURL(){
+            var link = window.location.href;
+            alert(link)
+            var filename="test";
+            if (link) {
+                console.log(link)
+                link = link.split('?')[1];
+                var arr = link.split('&');
+                for (var i = 0; i < arr.length; i++) {
+                    var a = arr[i].split('=');
+                    if (a[0] == "filename") {
+                        filename = a[1];
+                    }
+                }
+            }
+            
+            document.getElementById("dynURL").src = "https://visitorb01.s3.amazonaws.com/"+filename;
+            console.log(filename)
+            }
+
+        function sendMessageToApi() {
+            alert("Inside sendMessageToApi");
+            var visitor = document.getElementById('visitor-name').value.trim().toLowerCase();
+            var phone = document.getElementById('phone-number').value.trim().toLowerCase();
+            var link = window.location.href;
+            alert(link)
+            var faceid;
+            var filename;
+            if (link) {
+                console.log(link)
+                link = link.split('?')[1];
+                var arr = link.split('&');
+                for (var i = 0; i < arr.length; i++) {
+                    var a = arr[i].split('=');
+                    if (a[0] == "faceid") {
+                        faceid = a[1];
+                    }
+                    if (a[0] == "filename") {
+                        filename = a[1];
+                    }
+                }
+            }
+            console.log(filename)
+            console.log(faceid)
+            var apigClient = apigClientFactory.newClient({
+                region: 'us-east-1' // The region where the API is deployed
+                });
+            var params = {};
+            var body = {
+
+                "name": visitor,
+                "phone": phone,
+                //"faceId" : faceId,
+                "faceid": faceid,
+                //"filename" : filename
+                "filename": filename
+            };
+
+            var additionalParams = {};
+
+            apigClient.visitorsPost(params, body, additionalParams)
+                .then(function (result) {
+                    console.log(result);
+                }).catch(function (result) {
+                //This is where you would put an error callback
+                console.log("Error: ", result);
+            });
+            // receiveMessageFromApi(visitor, phone, faceid, s3key);
+            alert('after calling function');
+            //   return false;
+            // }
+ 
+        }
+
+    </script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.0/css/bootstrap.min.css">
+</head>
+<body>
+<h2 align="center">Visitor Information WebPage 1</h2>
+<img id="dynURL" src ="" height="400px" width="400px" class="buttons">
+
+<div class="buttons">
+    Name of Visitor:<br>
+    <input  id="visitor-name" type="text">
+    <br>
+    Phone Number:<br>
+    <input id="phone-number" type="text">
+    <br><br>
+    <button  id="user-input-button" onclick="sendMessageToApi()"> SUBMIT</button>
+    <p>if you click the submit button visitor will be given the access to door</p>
+</div>
+
+</body>
+</html>
